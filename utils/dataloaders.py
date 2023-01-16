@@ -304,7 +304,9 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            im0 = cv2.imread(path)  # BGR
+            #im0 = cv2.imread(path)  # BGR
+            cam = cv2.VideoCapture(0)
+            res, im0 = cam.read()
             assert im0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
 
@@ -338,7 +340,35 @@ class LoadImages:
     def __len__(self):
         return self.nf  # number of files
 
-
+class LoadPicture:
+    def __init__(self, sources='file.streams', img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
+        torch.backends.cudnn.benchmark = True  # faster for fixed-size inference
+        self.mode = 'stream'
+        self.img_size = img_size
+        self.stride = stride
+        self.vid_stride = vid_stride  # video frame-rate stride
+        sources = Path(sources).read_text().rsplit() if os.path.isfile(sources) else [sources]
+        n = len(sources)
+        self.sources = [clean_str(x) for x in sources]  # clean source names for later
+        self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
+        for i, s in enumerate(sources):
+            st = f'{i+1}/{n}: {s}... '
+            s = eval(s) if s.isnumeric() else s
+            if s == 0:
+                assert not is_colab(), '--source 0 webcam unsupported on Colab. Rerun command in a local environment.'
+                assert not is_kaggle(), '--source 0 webcam unsupported on Kaggle. Rerun command in a local environment.'
+            cap = cv2.VideoCapture(s)
+            #assert cap.isOpened(), f'{st}Failed to open {s}'
+            w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            fps = cap.get(cv2.CAP_PROP_FPS)  # warning: may return 0 or nan
+            self.frames[i] = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0) or float('inf')  # infinite stream fallback
+            self.fps[i] = max((fps if math.isfinite(fps) else 0) % 100, 0) or 30  # 30 FPS fallback
+            
+            _, self.imgs[i] = cap.read()            
+            LOGGER.info(f"{st} Success ({self.frames[i]} frames {w}x{h} at {self.fps[i]:.2f} FPS)")
+        LOGGER.info('')            
+            
 class LoadStreams:
     # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
     def __init__(self, sources='file.streams', img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):

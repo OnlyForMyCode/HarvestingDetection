@@ -1,6 +1,6 @@
 from opcua import Client
 
-client = Client("opc.tcp://127.0.0.1:123")
+client = Client("opc.tcp://192.168.137.1:4840")
 client.connect()
 
 objects = client.get_objects_node()
