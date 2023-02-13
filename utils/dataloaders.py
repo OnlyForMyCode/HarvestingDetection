@@ -304,9 +304,9 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            #im0 = cv2.imread(path)  # BGR
-            cam = cv2.VideoCapture(0)
-            res, im0 = cam.read()
+            im0 = cv2.imread(path)  # BGR
+            #cam = cv2.VideoCapture(0)
+            #res, im0 = cam.read()
             assert im0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
 

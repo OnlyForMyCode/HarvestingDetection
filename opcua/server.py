@@ -2,7 +2,7 @@ from time import sleep
 from opcua import Server
 
 server = Server()
-server.set_endpoint("opc.tcp://192.168.137.1:4840")
+server.set_endpoint("opc.tcp://127.0.0.1:4840")
 server.register_namespace("Room1")
 
 objects = server.get_objects_node()
